@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>管理页 · 核对与差异</title>
+<style>
+  body{margin:0;font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif;background:#f3f6f9;color:#1d2b36}
+  header{background:#23342b;color:#fff;padding:12px 18px;display:flex;gap:14px;align-items:center}
+  header h1{font-size:17px;margin:0}header a{color:#a7e0bb;font-size:13px;text-decoration:none}
+  main{max-width:1180px;margin:0 auto;padding:14px;display:grid;grid-template-columns:1fr 340px;gap:14px}
+  @media(max-width:980px){main{grid-template-columns:1fr}}
+  .card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:14px}
+  .card h2{font-size:15px;margin:0 0 10px}
+  select,button,input{font-size:13px;border-radius:8px;padding:7px 10px;border:1px solid #cfd9e2}
+  button{cursor:pointer;border:0;font-weight:600}
+  .p{background:#1d5f93;color:#fff}.g{background:#1a8a43;color:#fff}.r{background:#c62828;color:#fff}
+  .s{background:#eef2f6;color:#33475b}.g:disabled{background:#b9d6c3;cursor:not-allowed}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:7px 8px;border-bottom:1px solid #edf1f5;text-align:left}
+  th{background:#f8fafc;color:#5a7083}
+  .kpi{display:flex;gap:10px;margin:8px 0 12px;flex-wrap:wrap}
+  .kpi div{flex:1;min-width:110px;border-radius:10px;padding:10px;text-align:center;background:#f6f9fb}
+  .kpi b{display:block;font-size:22px}
+  .neg{color:#c62828}.pos{color:#c77700}.ok{color:#1a8a43}
+  .tag{font-size:11px;padding:2px 8px;border-radius:20px;background:#e7edf2}
+  .tag.picked{background:#fff1d6;color:#a0650a}.tag.verified{background:#e2f5e8;color:#1a8a43}
+  .tag.revoked{background:#fdeaea;color:#c62828}.tag.late{background:#efe7fb;color:#6a3fb0}
+  .gate{background:#fdecea;border-left:3px solid #c62828;padding:8px 12px;border-radius:0 8px 8px 0;font-size:13px;margin-top:8px}
+  .gate.ok{background:#e8f7ee;border-color:#1a8a43}
+  .ex{background:#fff8ec;border-left:3px solid #ef8a17;padding:7px 10px;margin:6px 0;border-radius:0 8px 8px 0;font-size:12px}
+  .muted{color:#7d92a2;font-size:12px}
+</style></head>
+<body>
+<header>
+  <h1>✅ 管理页：实物核对 · 计划/已拣/已核对差异</h1>
+  <span style="flex:1"></span>
+  <a href="/c.html">C 触屏</a><a href="/dispatch.html">调度端</a>
+</header>
+<main>
+  <div>
+    <div class="card">
+      <h2>选择任务
+        <select id="taskSel" onchange="m.load(Number(this.value))" style="margin-left:8px;min-width:300px"></select>
+        <button class="s" onclick="m.refresh()">刷新</button>
+      </h2>
+      <div id="summary"></div>
+    </div>
+    <div class="card">
+      <h2>实绩明细（撤销必须引用原实绩流水号）</h2>
+      <div id="actuals"></div>
+    </div>
+  </div>
+  <div>
+    <div class="card">
+      <h2>撤销（引用原实绩）</h2>
+      <input id="revUid" placeholder="原实绩 client_uid" style="width:100%;margin-bottom:6px"/>
+      <input id="revReason" placeholder="撤销原因（必填）" style="width:100%;margin-bottom:6px"/>
+      <button class="r" style="width:100%" onclick="m.revoke()">提交撤销并回补可用量</button>
+      <p class="muted" style="margin-top:6px">同一原实绩只能撤销一次；重复提交不会再次加回可用量。已核对记录需先处理差异。</p>
+    </div>
+    <div class="card">
+      <h2>异常处理（短缺闭环）</h2>
+      <div id="excs"></div>
+    </div>
+  </div>
+</main>
+<script src="/admin.js"></script>
+</body></html>

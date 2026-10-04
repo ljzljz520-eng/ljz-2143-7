@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Web 调度端</title>
+<style>
+  body{margin:0;font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif;background:#f3f6f9;color:#1d2b36}
+  header{background:#16324f;color:#fff;padding:12px 18px;display:flex;align-items:center;gap:14px}
+  header h1{font-size:17px;margin:0}
+  header a{color:#9fd0ff;font-size:13px;text-decoration:none}
+  main{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px;max-width:1400px;margin:0 auto}
+  @media(max-width:1000px){main{grid-template-columns:1fr}}
+  .card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  .card h2{font-size:15px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:7px 8px;border-bottom:1px solid #edf1f5;text-align:left;vertical-align:top}
+  th{color:#5a7083;font-weight:600;background:#f8fafc}
+  button{cursor:pointer;border:0;border-radius:8px;padding:6px 11px;font-size:12px;font-weight:600}
+  .p{background:#1d5f93;color:#fff} .g{background:#1a8a43;color:#fff}
+  .o{background:#ef8a17;color:#fff} .r{background:#c62828;color:#fff}
+  .s{background:#eef2f6;color:#33475b}
+  input,select{padding:6px 8px;border:1px solid #cfd9e2;border-radius:7px;font-size:13px}
+  .tag{font-size:11px;padding:2px 8px;border-radius:20px;background:#e7edf2}
+  .tag.live{background:#e2f5e8;color:#1a8a43}.tag.dead{background:#fdeaea;color:#c62828}
+  .splitrow{display:flex;align-items:center;gap:6px;margin:4px 0;font-size:13px}
+  .muted{color:#7d92a2;font-size:12px}
+  .ex{background:#fff8ec;border-left:3px solid #ef8a17;padding:6px 9px;margin:5px 0;font-size:12px;border-radius:0 8px 8px 0}
+  .arrowchk{font-size:12px;color:#1a8a43}.arrowchk.bad{color:#c62828}
+  dialog{border:0;border-radius:14px;padding:0;width:min(560px,94vw)}
+  dialog::backdrop{background:rgba(10,20,30,.5)}
+  .dlg{padding:18px}.dlg h3{margin:0 0 10px}
+  .row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🗂 Web 调度端</h1>
+  <span class="muted" style="color:#cfe0ef">拆单分配 · 租约监控 · 地图版本</span>
+  <span style="flex:1"></span>
+  <a href="/c.html">C 触屏</a><a href="/admin.html">管理页</a>
+</header>
+<main>
+  <section class="card">
+    <h2>订单与拆单 <button class="s" onclick="d.load()">刷新</button></h2>
+    <div id="orders"></div>
+  </section>
+
+  <section class="card">
+    <h2>任务池 / 租约 <span class="muted">租约 2 分钟，到期可调走；已拣实绩保留</span></h2>
+    <div id="tasks"></div>
+  </section>
+
+  <section class="card">
+    <h2>地图版本（旧坐标按任务锁定版本展示）</h2>
+    <div id="maps"></div>
+  </section>
+
+  <section class="card">
+    <h2>实时异常</h2>
+    <div id="excs"></div>
+  </section>
+</main>
+
+<dialog id="splitDlg"><div class="dlg" id="splitBody"></div></dialog>
+<script src="/dispatch.js"></script>
+</body></html>

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>C 触屏拣货终端</title>
+<style>
+  :root { --ok:#1a8a43; --warn:#c77700; --bad:#c62828; --ink:#1d2b36; --line:#d7e0e8; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif; color:var(--ink); background:#0f1620; }
+  header { display:flex; gap:10px; align-items:center; padding:8px 12px; background:#16222e; color:#e7eef4; flex-wrap:wrap; }
+  header h1 { font-size:16px; margin:0; margin-right:8px; }
+  header input,header select,header button { font-size:14px; padding:7px 10px; border-radius:8px; border:1px solid #3a4b5c; background:#22303e; color:#e7eef4; }
+  header button { cursor:pointer; }
+  main { display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:10px; padding:10px; height:calc(100vh - 52px); }
+  @media (max-width:900px){ main{grid-template-columns:1fr; height:auto} }
+  .card { background:#fff; border-radius:12px; overflow:hidden; display:flex; flex-direction:column; min-height:0; }
+  #mapWrap { position:relative; flex:1; min-height:380px; background:#eef3f7;
+             display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  #mapStage { position:relative; height:100%; aspect-ratio:1/1; max-width:100%; }
+  #mapStage > #bg, #mapStage > #shelfLayer { position:absolute; inset:0; width:100%; height:100%; }
+  #bg { display:block; }
+  #shelfLayer { }
+  .shelf { position:absolute; transform:translate(-50%,-50%); width:84px; border-radius:10px;
+           background:rgba(255,255,255,.94); border:2px solid #3d7bbf; box-shadow:0 2px 8px rgba(0,0,0,.18);
+           text-align:center; padding:5px 4px; cursor:pointer; user-select:none; }
+  .shelf .code { font-weight:700; font-size:14px; }
+  .shelf .meta { font-size:11px; color:#47606f; margin-top:2px; line-height:1.25; }
+  .shelf.done { border-color:var(--ok); background:#e7f6ec; }
+  .shelf.active { border-color:#ef8a17; box-shadow:0 0 0 4px rgba(239,138,23,.3); }
+  .shelf.zero { border-color:#9aa8b4; opacity:.75; }
+  .arrow { position:absolute; transform-origin:0 50%; height:0; border-top:3px solid #e0583b; pointer-events:none; }
+  .arrow::after { content:''; position:absolute; right:-1px; top:-6px; border:6px solid transparent; border-left-color:#e0583b; border-right:0; }
+  .badge-v { position:absolute; top:8px; left:8px; background:rgba(0,0,0,.62); color:#fff; padding:4px 10px; border-radius:20px; font-size:12px; z-index:5; }
+  .bgfail { position:absolute; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column;
+            background:repeating-linear-gradient(45deg,#f7e9e9,#f7e9e9 18px,#fdf2f2 18px,#fdf2f2 36px); z-index:8; text-align:center; padding:20px; }
+  .bgfail b { color:var(--bad); font-size:17px; }
+  .bgfail span { color:#7a5050; font-size:13px; margin-top:6px; }
+  .panel { padding:12px; overflow:auto; }
+  .panel h2 { font-size:14px; margin:0 0 8px; }
+  .modebar { display:flex; gap:6px; margin-bottom:10px; }
+  .modebar button { flex:1; padding:9px; border-radius:8px; border:1px solid var(--line); background:#f2f6f9; cursor:pointer; font-size:13px; }
+  .modebar button.on { background:#1d5f93; color:#fff; border-color:#1d5f93; }
+  .line { border:1px solid var(--line); border-radius:10px; padding:9px 10px; margin-bottom:8px; font-size:13px; }
+  .line.cur { border-color:#ef8a17; background:#fff7ec; }
+  .line.done { border-color:var(--ok); background:#f0faf3; }
+  .line .r { display:flex; justify-content:space-between; gap:6px; }
+  .qty { font-size:20px; font-weight:700; }
+  .scanbox { display:flex; gap:6px; margin:8px 0; }
+  .scanbox input { flex:1; font-size:18px; padding:10px; border:2px solid #3d7bbf; border-radius:10px; }
+  .btn { padding:9px 12px; border-radius:9px; border:0; cursor:pointer; font-size:13px; font-weight:600; }
+  .btn.p { background:#1d5f93; color:#fff; } .btn.g{background:var(--ok);color:#fff}
+  .btn.o{background:#ef8a17;color:#fff} .btn.r{background:var(--bad);color:#fff}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .feed { font-size:12px; max-height:150px; overflow:auto; border-top:1px dashed var(--line); padding-top:6px; }
+  .feed div { padding:2px 0; border-bottom:1px dotted #edf1f4; }
+  .ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)}
+  .offline { background:var(--bad)!important; }
+  #netDot { display:inline-block;width:9px;height:9px;border-radius:50%;background:#3ddc84;margin-right:5px; }
+  .pill { font-size:11px; padding:2px 8px; border-radius:20px; background:#e7edf2; }
+  .leaseBar { height:6px; background:#e7edf2; border-radius:4px; overflow:hidden; margin:4px 0 8px; }
+  .leaseBar i { display:block;height:100%; background:linear-gradient(90deg,#1d5f93,#3ddc84); }
+  dialog { border:0; border-radius:14px; padding:0; width:min(440px,94vw); }
+  dialog::backdrop { background:rgba(10,20,30,.55); }
+  .dlg { padding:16px; }
+  .dlg h3 { margin:0 0 8px; }
+  .dlg .row { display:flex; gap:8px; justify-content:flex-end; margin-top:14px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>📟 C 触屏拣货终端</h1>
+  <input id="deviceId" value="CART-07" style="width:110px" title="设备号"/>
+  <select id="taskSel"></select>
+  <button id="btnClaim">领取选中任务</button>
+  <button id="btnPull">拉取池中下一任务</button>
+  <button id="btnRefresh">刷新</button>
+  <span style="flex:1"></span>
+  <span><span id="netDot"></span><span id="netTxt">在线</span></span>
+  <button id="btnOffline" title="模拟断网/断电场景">切到离线</button>
+  <a href="/dispatch.html" style="color:#9fd0ff;font-size:13px">调度端</a>
+  <a href="/admin.html" style="color:#9fd0ff;font-size:13px">管理页</a>
+</header>
+
+<main>
+  <div class="card">
+    <div id="mapWrap">
+      <div id="mapStage">
+        <img id="bg" alt="分区图底图"/>
+        <div id="shelfLayer"></div>
+      </div>
+      <div class="badge-v" id="verBadge">地图版本 -</div>
+      <div class="bgfail" id="bgFail">
+        <b>⚠️ 分区底图加载失败</b>
+        <span id="bgFailInfo"></span>
+        <span style="color:#a33">已阻止开工作业：货架方位可能与实物不一致。请重试加载或报修，不能凭文字猜测货位。</span>
+        <div style="margin-top:10px"><button class="btn p" onclick="app.reloadBg()">重新加载底图</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card panel">
+    <div id="taskInfo"><span class="pill">未领取任务</span></div>
+    <div class="leaseBar"><i id="leaseBar" style="width:0%"></i></div>
+    <div class="modebar">
+      <button id="modeSingle" class="on" onclick="app.setMode('single')">逐扫确认</button>
+      <button id="modeBatch" onclick="app.setMode('batch')">本地短批</button>
+    </div>
+
+    <div id="curLine" style="font-size:13px;color:#5a7083;margin-bottom:6px">先领取任务</div>
+    <div class="scanbox">
+      <input id="scanInput" placeholder="扫码（货架码/SKU 码），枪发 Enter 提交" autocomplete="off"/>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+      <button class="btn p" onclick="app.fireScan()">提交一扫</button>
+      <button class="btn o" id="btnBurst" onclick="app.burst()">扫描枪连发 ×5(同码)</button>
+      <button class="btn g" id="btnFlush" onclick="app.flushBatch()" disabled>提交短批(0)</button>
+      <button class="btn r" onclick="app.shortage()">部分短缺上报</button>
+    </div>
+    <div id="lines"></div>
+    <h2 style="margin-top:10px">本地反馈</h2>
+    <div class="feed" id="feed"></div>
+  </div>
+</main>
+
+<dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
+<script src="/c.js"></script>
+</body>
+</html>

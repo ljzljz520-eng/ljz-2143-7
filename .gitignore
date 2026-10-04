@@ -23,3 +23,6 @@ __pycache__/
 *.log
 .env
 .env.*
+
+# demo sqlite
+/db/pick.db*
